@@ -32,7 +32,8 @@ score_prompt: .asciiz "Please enter a score as an integer value: "
 grade_output: .asciiz "The grade is: "
 newscore_prompt: .asciiz "Would you like to enter a new score? \n (Y): Yes (N) No \n Enter 'Y' or 'N' for your selection:  "
 exit_prompt: .asciiz "The program will now exit."
-invalid: .asciiz "INVALID INPUT. PLEASE TRY AGAIN"
+invalid_grade: .asciiz "INVALID INPUT: INPUT MUST BE BETWEEN 0 AND 100 INCLUSIVE"
+invalid_selection: .asciiz "INVALID CHOICE: INPUT 1 OR 2 FOR YOUR SELECTION"
 newline: .asciiz "\n"
 border: .asciiz "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 grade_A: .asciiz "A"
@@ -62,13 +63,12 @@ grade_F: .asciiz "F"
     move $t0, $v0 
 .end_macro  
 
-
-#macro to prompt user for numbers 
-
 .text
 main:
+        #print the main menu header 
 	print_string(main_menu)
 looping:
+    #print the main menu
     print_string(menu)
     
     # get user int
@@ -82,22 +82,22 @@ looping:
     # continue
     bne $t0, 1, invalid_choice  # if not 1 then reprompt
 
+    #print new lines and a border in between prompts
     print_string(newline)
     print_string(newline)
     print_string(border)
     print_string(newline)
     
-    # prompt user
+    # prompt user for a score 
     print_string(score_prompt)
-
     li $v0, 5    
     syscall
     move $t1, $v0
 
 score_check:
-    # validation
+    # validation--checks whether a value is below 0 or above a realistic extra credit value
     blt $t1, 0, invalid_score
-    bgt $t1, 100, invalid_score
+    bgt $t1, 200, invalid_score
 
     # determine letter grade
     li $t2, 90
@@ -113,20 +113,23 @@ score_check:
     bge $t1, $t2, gradeD
 
 
+#prints the letter grade F
 gradeF:
     print_string(grade_output)
     print_string(grade_F)
     print_string(newline)
-
+    #jumps to the continue_prompt label to ask the user if they want to enter another grade
     j continue_prompt
 
+#prints the letter grade A
 gradeA:
     print_string(grade_output)
     print_string(grade_A)
     print_string(newline)
-
+    
     j continue_prompt
 
+#prints the letter grade B
 gradeB:
     print_string(grade_output)
     print_string(grade_B)
@@ -134,6 +137,7 @@ gradeB:
 
     j continue_prompt
 
+#prints the letter grade C
 gradeC:
     print_string(grade_output)
     print_string(grade_C)
@@ -141,6 +145,7 @@ gradeC:
 
     j continue_prompt
 
+#prints the letter grade D
 gradeD:
     print_string(grade_output)
     print_string(grade_D)
@@ -148,6 +153,7 @@ gradeD:
 
     j continue_prompt
 
+#if the user agrees to continue the program, run this code
 continue_prompt:
     # ask if want to continue
     print_string(newscore_prompt)
@@ -160,19 +166,23 @@ continue_prompt:
     li $t1, 'Y'
     li $t2, 'N'
     
+    #print a new line 
     print_string(newline)
-
+    
+    #if user wants to input another grade, execute main
     beq $t0, $t1, main
+    #if user does not want to input another grade, exit program
     beq $t0, $t2, exit
 
-    # if invalid
-    print_string(invalid)
+    # if invalid selection, print error message
+    print_string(invalid_selection)
     print_string(newline)
 
     j continue_prompt
 
+#if the score is invalid, print an error message and prompt for another score
 invalid_score:
-    print_string(invalid)
+    print_string(invalid_grade)
     print_string(newline)
     print_string(score_prompt)
 
@@ -183,7 +193,7 @@ invalid_score:
     j score_check
 
 invalid_choice:
-	print_string(invalid)
+	print_string(invalid_selection)
     print_string(newline)
 
     j looping
